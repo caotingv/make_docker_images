@@ -4,10 +4,13 @@ ARG DEP_PACKAGES="apt-transport-https ca-certificates curl wget gnupg dpkg-dev s
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/') \
-    && apt update -qq \
+    && apt update \
     && apt install -y --no-install-recommends $DEP_PACKAGES \
-    && curl -fsSL "https://download.docker.com/linux/debian/gpg" | apt-key add -qq - \
+    && curl -fsSL "https://download.docker.com/linux/debian/gpg" | apt-key add - \
     && echo "deb [arch=$ARCH] https://download.docker.com/linux/ubuntu ${OS_VERSION} stable" > /etc/apt/sources.list.d/docker.list\
+    && curl https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | apt-key add - \
+    && echo "deb https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list\
+    && add-apt-repository --yes --update ppa:ansible/ansible\
     && apt update -qq
 
 WORKDIR /ubuntu/${TARGETARCH}
