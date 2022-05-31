@@ -82,9 +82,3 @@ ubuntu:
     - docker-ce
     - docker-ce-cli
     - containerd.io
-  kubernetes:
-    - kubectl=1.23.5-00
-    - kubelet=1.23.5-00
-    - kubeadm=1.23.5-00
-    - etcd-client
-
