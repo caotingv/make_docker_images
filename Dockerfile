@@ -16,14 +16,13 @@ RUN ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/') \
 WORKDIR /ubuntu/${OS_VERSION}
 COPY packages.yaml packages.yaml 
 
-RUN yq eval packages.yaml -j | jq -r '.common[],.apt[],.ubuntu[]' | sort -u > packages.list \
-    && dpkg --get-selections | grep -v deinstall | cut -f1 >> packages.list
+COPY --from=mikefarah/yq:4.11.1 /usr/bin/yq /usr/bin/yq
+RUN yq eval '.common[],.apt[],.kubespray.common[],.kubespray.apt[],.ubuntu[]' packages.yaml > packages.list \
+    && dpkg --get-selections | grep -v deinstall | cut -f1 | cut -d ':' -f1 >> packages.list \
+    && sort -u packages.list | xargs apt-get install --reinstall --print-uris | awk -F "'" '{print $2}' | grep -v '^$' | sort -u > packages.urls
 
-RUN chown -R _apt /ubuntu/$OS_VERSION \
-    && cat packages.list | xargs -L1 -I {} apt-cache depends --recurse --no-recommends --no-suggests \
-    --no-conflicts --no-breaks --no-replaces --no-enhances {}  | grep '^\w' | sort -u | xargs apt-get download
-
-RUN cd ../ && dpkg-scanpackages $OS_VERSION | gzip -9c > $OS_VERSION/Packages.gz
+RUN wget -q -x -P ${OS_VERSION} -i packages.urls \
+    && dpkg-scanpackages ${OS_VERSION} | gzip -9c > ${OS_VERSION}/Packages.gz
 
 FROM httpd:latest
 COPY --from=os-focal /ubuntu /usr/local/apache2/htdocs/
