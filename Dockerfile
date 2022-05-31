@@ -4,17 +4,14 @@ ARG DEP_PACKAGES="apt-transport-https ca-certificates curl wget gnupg dpkg-dev s
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/') \
-    && apt update \
+    && apt update -qq \
     && apt install -y --no-install-recommends $DEP_PACKAGES \
-    && curl -fsSL "https://download.docker.com/linux/debian/gpg" | apt-key add - \
+    && curl -fsSL "https://download.docker.com/linux/debian/gpg" | apt-key add -qq - \
     && echo "deb [arch=$ARCH] https://download.docker.com/linux/ubuntu ${OS_VERSION} stable" > /etc/apt/sources.list.d/docker.list\
-    && curl https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | apt-key add - \
-    && echo "deb https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list\
-    && add-apt-repository --yes --update ppa:ansible/ansible\
     && apt update -qq
 
-WORKDIR /ubuntu/${OS_VERSION}
-COPY packages.yaml packages.yaml 
+WORKDIR /ubuntu/${TARGETARCH}
+COPY packages.yaml .
 
 COPY --from=mikefarah/yq:4.11.1 /usr/bin/yq /usr/bin/yq
 RUN yq eval '.common[],.apt[],.kubespray.common[],.kubespray.apt[],.ubuntu[]' packages.yaml > packages.list \
@@ -26,4 +23,3 @@ RUN wget -q -x -P ${OS_VERSION} -i packages.urls \
 
 FROM httpd:latest
 COPY --from=os-focal /ubuntu /usr/local/apache2/htdocs/
-
