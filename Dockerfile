@@ -1,6 +1,7 @@
 FROM ubuntu:20.04 as os-focal
 ARG OS_VERSION=focal
 ARG DEP_PACKAGES="apt-transport-https ca-certificates curl wget gnupg dpkg-dev software-properties-common"
+ARG DEBIAN_FRONTEND=noninteractive
 
 RUN ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/') \
     && apt update \
